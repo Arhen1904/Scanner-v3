@@ -6,7 +6,7 @@ import io
 import numpy as np
 import re
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../static', template_folder='../templates')
 CORS(app)
 
 # OCR global reutilizable
