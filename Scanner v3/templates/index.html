@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+    <title>OCR Web App</title>
+  </head>
+  <body>
+    <h1>OCR Web App</h1>
+    <form id="uploadForm">
+      <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        capture="environment"
+      />
+      <label>
+        <input type="checkbox" id="filterToggle" checked />
+        Solo analizar datos de factura
+      </label>
+      <button id="analyzeButton" type="submit" style="display: none">
+        Analizar Imagen
+      </button>
+      <button id="clearImageButton" type="button" style="display: none">
+        Eliminar Imagen
+      </button>
+    </form>
+    <img
+      id="imagePreview"
+      alt="Miniatura de la imagen seleccionada"
+      style="display: none"
+    />
+
+    <button id="toggleCamera">Activar Cámara</button>
+    <button id="switchCamera" style="display: none">Cambiar Cámara</button>
+    <div id="canvasContainer">
+      <video id="video" autoplay></video>
+      <button id="captureButton">Tomar Foto</button>
+      <canvas id="captureCanvas"></canvas>
+    </div>
+    <img id="capturedImage" alt="Imagen Capturada" />
+    <div id="captureOptions">
+      <button id="acceptButton">Aceptar</button>
+      <button id="cancelButton">Cancelar</button>
+    </div>
+    <div id="result"></div>
+    <div id="invoicePreview" style="display: none">
+      <h3>Datos Detectados</h3>
+      <textarea id="editableData" rows="10" cols="50"></textarea>
+      <button id="downloadCSVButton" style="display: none">
+        Descargar CSV
+      </button>
+    </div>
+  </body>
+</html>
