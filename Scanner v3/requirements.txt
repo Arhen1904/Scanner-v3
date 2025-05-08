@@ -10,7 +10,7 @@ paddleocr==2.10.0
 paddlepaddle==3.0.0
 pillow==11.2.1
 scipy==1.15.2
-setuptools==65.0.0
+setuptools>=65.0.0
 requests==2.32.3
 beautifulsoup4==4.13.4
 waitress==3.0.2
