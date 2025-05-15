@@ -5,7 +5,9 @@ from PIL import Image
 import io
 import numpy as np
 import re
+import os
 
+# Configuración del servidor
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 
@@ -61,7 +63,7 @@ def ocr_route():
         image_np = np.array(img)
         result = safe_ocr(image_np)
 
-        text = "\n".join([line[1][0] for line in result[0]]) if result else "(No se detectó texto)"
+        text = "\n".join([line[1][0] for line in result[0]]) if result and result[0] else "(No se detectó texto)"
 
         if filter_flag:
             invoice_data = extract_invoice_data(text)
@@ -73,6 +75,6 @@ def ocr_route():
         print("Error procesando imagen:", e)
         return jsonify({"error": str(e)}), 500
 
+# Esto asegura que Gunicorn maneje la aplicación correctamente en Render
 if __name__ == '__main__':
-    from gunicorn.app.wsgiapp import run
-    run()
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
