@@ -9,7 +9,7 @@ import os
 
 # Configuración del servidor
 app = Flask(__name__)
-CORS(app, origins=["*"])  # Cambia "*" por el dominio de tu frontend en producción para mayor seguridad
+CORS(app, resources={r"/*": {"origins": ["https://scanner-v3-orba7y3i9-arhens-projects.vercel.app"]}})  # Ajuste CORS
 
 # OCR global reutilizable
 ocr_global = PaddleOCR(use_angle_cls=True, lang='latin', use_gpu=False)
@@ -64,7 +64,7 @@ def ocr_route():
         result = safe_ocr(image_np)
 
         text = "\n".join([line[1][0] for line in result[0]]) if result and result[0] else "(No se detectó texto)"
-        print("Texto detectado:", text)  # Para depuración
+        print("Texto detectado:", text)
 
         if filter_flag:
             invoice_data = extract_invoice_data(text)
