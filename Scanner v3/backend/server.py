@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from paddleocr import PaddleOCR
 from PIL import Image
@@ -9,7 +9,16 @@ import os
 
 # Configuración del servidor
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://scanner-v3-orba7y3i9-arhens-projects.vercel.app"]}})  # Ajuste CORS
+# Ajuste CORS: permite solo el frontend específico (ajusta según tu dominio)
+CORS(app, resources={r"/*": {"origins": ["https://scanner-v3-orba7y3i9-arhens-projects.vercel.app"]}})
+
+# Añadir cabeceras CORS en todas las respuestas
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'https://scanner-v3-orba7y3i9-arhens-projects.vercel.app')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
 
 # OCR global reutilizable
 ocr_global = PaddleOCR(use_angle_cls=True, lang='latin', use_gpu=False)
@@ -50,8 +59,16 @@ def extract_invoice_data(text):
 def home():
     return jsonify({"message": "API OCR is running"}), 200
 
-@app.route('/ocr', methods=['POST'])
+@app.route('/ocr', methods=['POST', 'OPTIONS'])
 def ocr_route():
+    if request.method == 'OPTIONS':
+        # Responder a preflight CORS
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'https://scanner-v3-orba7y3i9-arhens-projects.vercel.app')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        return response
+
     image_file = request.files.get('image')
     filter_flag = request.form.get('filter', 'false').lower() == 'true'
 
@@ -76,6 +93,5 @@ def ocr_route():
         print("Error procesando imagen:", e)
         return jsonify({"error": str(e)}), 500
 
-# Esto asegura que Gunicorn maneje la aplicación correctamente en Render
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
