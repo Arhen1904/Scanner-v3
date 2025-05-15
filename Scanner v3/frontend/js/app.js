@@ -276,7 +276,7 @@ function resetCaptureState() {
 }
 
 // Configura aquí tu URL del backend
-const BACKEND_URL = "https://scanner-v3-1.onrender.com";
+const BACKEND_URL = "https://scanner-v3-1.onrender.com/ocr";
 
 // Procesar la imagen seleccionada
 async function processImage(file) {
