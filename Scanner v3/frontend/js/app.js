@@ -275,68 +275,112 @@ function resetCaptureState() {
   document.getElementById("captureOptions").style.display = "none";
 }
 
+// Configura aquí tu URL del backend
+const BACKEND_URL = "https://scanner-v3-1.onrender.com";
+
+// Procesar la imagen seleccionada
 async function processImage(file) {
-  const resized = await resizeImage(file, 1024, 1024);
   const resultDiv = document.getElementById("result");
   const filterToggle = document.getElementById("filterToggle").checked;
 
-  resultDiv.textContent = "Procesando...";
-  resultDiv.style.display = "block";
-
-  const formData = new FormData();
-  formData.append("image", resized, file.name);
-  formData.append("filter", filterToggle);
+  // Mostrar mensaje de procesamiento
+  showProcessingMessage(resultDiv);
 
   try {
-    const response = await fetch("http://localhost:5000/ocr", {
-      method: "POST",
-      body: formData,
-      mode: "cors",
-    });
+    // Redimensionar imagen para optimizar OCR
+    const resized = await resizeImage(file, 1024, 1024);
+    const text = await sendImageToServer(resized, file.name, filterToggle);
 
-    let data;
-    const contentType = response.headers.get("content-type");
-    try {
-      data = contentType?.includes("application/json")
-        ? await response.json()
-        : await response.text();
-    } catch {
-      data = await response.text();
-    }
-
-    console.log("Texto recibido del servidor:", data);
-
-    if (response.ok) {
-      const text = (typeof data === "string" ? data : data.text)?.trim() || "";
-      console.log("Texto procesado:", text);
-
-      if (filterToggle) {
-        if (text !== "No se encontraron datos de factura.") {
-          document.getElementById("editableData").value = text;
-          showInvoicePreview();
-          resultDiv.textContent = "Datos extraídos correctamente.";
-        } else {
-          resultDiv.textContent = "No se encontraron datos de factura.";
-        }
-      } else {
-        document.getElementById("editableData").value = text;
-        document.getElementById("invoicePreview").style.display = "block";
-        document.getElementById("downloadCSVButton").style.display = "none";
-        resultDiv.textContent = "Texto completo detectado.";
-      }
+    // Mostrar el resultado adecuado
+    if (filterToggle && text === "No se encontraron datos de factura.") {
+      resultDiv.textContent = text;
     } else {
-      console.error("Respuesta no exitosa:", data);
-      resultDiv.textContent = "Error del servidor al procesar la imagen.";
+      showExtractedData(text);
+      resultDiv.textContent = filterToggle
+        ? "Datos extraídos correctamente."
+        : "Texto completo detectado.";
     }
-  } catch (err) {
-    console.error("Fetch falló:", err);
-    resultDiv.textContent = "Error de red o CORS al procesar la imagen.";
+  } catch (error) {
+    console.error("Error procesando imagen:", error);
+    resultDiv.textContent = error.message;
   } finally {
     resetCaptureState();
-    document.getElementById("analyzeButton").style.display = "none";
-    document.getElementById("clearImageButton").style.display = "none";
-    document.getElementById("imagePreview").style.display = "none";
+    clearPreview();
   }
+}
+
+// Enviar imagen al servidor para análisis
+async function sendImageToServer(imageBlob, imageName, filter) {
+  const formData = new FormData();
+  formData.append("image", imageBlob, imageName);
+  formData.append("filter", filter);
+
+  const response = await fetch(BACKEND_URL, {
+    method: "POST",
+    body: formData,
+    mode: "cors",
+  });
+
+  const contentType = response.headers.get("content-type");
+  const data = contentType?.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Error del servidor al procesar la imagen.");
+  }
+
+  return typeof data === "string" ? data : data.text;
+}
+
+// Mostrar mensaje de procesamiento
+function showProcessingMessage(resultDiv) {
+  resultDiv.textContent = "Procesando...";
+  resultDiv.style.display = "block";
+}
+
+// Mostrar datos extraídos
+function showExtractedData(text) {
+  const editableData = document.getElementById("editableData");
+  const invoicePreview = document.getElementById("invoicePreview");
+
+  editableData.value = text;
+  invoicePreview.style.display = "block";
+  document.getElementById("downloadCSVButton").style.display = "none";
+}
+
+// Limpiar la vista previa y botones
+function clearPreview() {
+  document.getElementById("analyzeButton").style.display = "none";
+  document.getElementById("clearImageButton").style.display = "none";
+  document.getElementById("imagePreview").style.display = "none";
+}
+
+// Restablecer el estado de captura
+function resetCaptureState() {
+  document
+    .getElementById("captureCanvas")
+    .getContext("2d")
+    .clearRect(0, 0, 1024, 1024);
+  document.getElementById("capturedImage").src = "";
+}
+
+// Función de redimensionar imagen (la mantengo igual, pero puedes modificarla)
+async function resizeImage(file, maxWidth, maxHeight) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(maxWidth / img.width, maxHeight / img.height);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => resolve(blob), file.type || "image/jpeg", 0.9);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
 }
 
 // Función auxiliar para capitalizar
